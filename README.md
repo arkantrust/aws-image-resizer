@@ -1,61 +1,48 @@
- # AWS TypeScript Pulumi Template
+# Image Gallery (AWS + Pulumi + Bun)
 
- A minimal Pulumi template for provisioning AWS infrastructure using TypeScript. This template creates an Amazon S3 bucket and exports its name.
+A small image gallery: upload a photo from the browser, it lands in S3 via a
+presigned URL, the Bun server converts it to WebP and records it in an
+`index.txt` manifest, and the gallery reads that manifest to render the grid.
 
- ## Prerequisites
+See `CLAUDE.md` for the full architecture and how the pieces fit together.
 
- - Pulumi CLI (>= v3): https://www.pulumi.com/docs/get-started/install/
- - Node.js (>= 14): https://nodejs.org/
- - AWS credentials configured (e.g., via `aws configure` or environment variables)
+## Layout
 
- ## Getting Started
+- `infra/` — Pulumi program (TypeScript), its own `Pulumi.yaml`/`package.json`. `index.ts` provisions an `ImageBucket` (`infra/imageBucket.ts`), the S3 bucket + IAM identity.
+- `apps/web` — the React/shadcn frontend and Bun backend.
+- `apps/resizer` — not wired up yet.
 
- 1. Initialize a new Pulumi project:
+The repo root has no `package.json` of its own — run commands from `infra/`
+or `apps/web`.
 
-    ```bash
-    pulumi new aws-typescript
-    ```
+## Prerequisites
 
-    Follow the prompts to set your:
-    - Project name
-    - Project description
-    - AWS region (defaults to `us-east-1`)
+- Pulumi CLI (>= v3): https://www.pulumi.com/docs/get-started/install/
+- Bun (>= 1.4): https://bun.com
+- AWS credentials configured (e.g., via `aws configure` or environment variables)
 
- 2. Preview and deploy your infrastructure:
+## Getting Started
 
-    ```bash
-    pulumi preview
-    pulumi up
-    ```
+```bash
+cd infra
+bun install
+pulumi preview
+pulumi up
+bun run sync-env          # writes ../apps/web/.env from the stack outputs
+cd ../apps/web && bun install && bun dev
+```
 
- 3. When you're finished, tear down your stack:
+When you're finished, tear down the stack (from `infra/`):
 
-    ```bash
-    pulumi destroy
-    pulumi stack rm
-    ```
+```bash
+pulumi destroy
+```
 
- ## Project Layout
+## Configuration
 
- - `Pulumi.yaml` — Pulumi project and template metadata
- - `index.ts` — Main Pulumi program (creates an S3 bucket)
- - `package.json` — Node.js dependencies
- - `tsconfig.json` — TypeScript compiler options
+| Key                        | Description                                          | Default                     |
+| --------------------------- | ----------------------------------------------------- | ---------------------------- |
+| `aws:region`                | The AWS region to deploy resources into              | `us-east-1`                 |
+| `project:allowedOrigins`    | Origins allowed to upload via presigned URL (CORS)   | `["http://localhost:3000"]` |
 
- ## Configuration
-
- | Key           | Description                             | Default     |
- | ------------- | --------------------------------------- | ----------- |
- | `aws:region`  | The AWS region to deploy resources into | `us-east-1` |
-
- Use `pulumi config set <key> <value>` to customize configuration.
-
- ## Next Steps
-
- - Extend `index.ts` to provision additional resources (e.g., VPCs, Lambda functions, DynamoDB tables).
- - Explore [Pulumi AWSX](https://www.pulumi.com/docs/reference/pkg/awsx/) for higher-level AWS components.
- - Consult the [Pulumi documentation](https://www.pulumi.com/docs/) for more examples and best practices.
-
- ## Getting Help
-
- If you encounter any issues or have suggestions, please open an issue in this repository.
+Use `pulumi config set <key> <value>` to customize configuration.
